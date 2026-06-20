@@ -204,10 +204,17 @@ main{padding:28px 32px 80px;max-width:1180px;width:100%}
 
 /* ---------- Outcome library ---------- */
 .outcome-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
-.outcome-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
-.outcome-card .src{font-size:11px;color:var(--ink-40);text-transform:uppercase;letter-spacing:0.3px;font-weight:600;margin-bottom:6px}
+.outcome-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px;position:relative}
+.outcome-card .src{font-size:11px;color:var(--ink-40);text-transform:uppercase;letter-spacing:0.3px;font-weight:600;margin-bottom:6px;padding-right:20px}
 .outcome-card .txt{font-size:13.5px;line-height:1.5}
 .outcome-card .date{font-size:11px;color:var(--ink-40);margin-top:10px;font-family:'JetBrains Mono',monospace}
+.outcome-del{
+  position:absolute;top:12px;right:12px;background:none;border:none;color:var(--ink-40);
+  padding:3px;opacity:0;transition:opacity .12s,color .12s;
+}
+.outcome-card:hover .outcome-del{opacity:1}
+.outcome-del:hover{color:var(--danger)}
+.outcome-del svg{width:14px;height:14px}
 .outcome-form{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:18px;display:flex;flex-direction:column;gap:10px}
 .outcome-form textarea{width:100%;border:1px solid var(--line-strong);border-radius:var(--radius-sm);padding:10px 12px;resize:vertical;min-height:64px}
 .outcome-form textarea:focus{outline:none;border-color:var(--accent)}
@@ -1101,6 +1108,9 @@ function renderOutcomes(){
     <div class="outcome-grid">
       ${state.outcomes.length ? [...state.outcomes].reverse().map(o=>`
         <div class="outcome-card">
+          <button class="outcome-del" onclick="deleteOutcome('${o.id}')" title="Xoá outcome">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+          </button>
           <div class="src">${o.source ? escapeHtml(o.source) : 'Chung'}</div>
           <div class="txt">${escapeHtml(o.text)}</div>
           <div class="date">${fmtDate(o.date)}</div>
@@ -1118,6 +1128,13 @@ function addOutcome(){
   saveState();
   render();
   showToast('Đã lưu outcome');
+}
+
+function deleteOutcome(id){
+  state.outcomes = state.outcomes.filter(o=>o.id!==id);
+  saveState();
+  render();
+  showToast('Đã xoá outcome');
 }
 
 /* ============================================================
