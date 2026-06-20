@@ -1,0 +1,1024 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>L&D Tracker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   L&D TRACKER — design tokens
+   Palette: paper #FAFAF9, ink #1A1A18, line #E4E2DD,
+            accent indigo #4F5DFF (focus/progress),
+            done sage #2F6F4F, warn amber #B8722E
+   Type: Inter (UI), JetBrains Mono (dates/numbers/labels)
+   ============================================================ */
+:root{
+  --paper:#FAFAF9;
+  --surface:#FFFFFF;
+  --surface-2:#F2F1ED;
+  --ink:#1A1A18;
+  --ink-60:#6B6A65;
+  --ink-40:#9C9A93;
+  --line:#E4E2DD;
+  --line-strong:#D2CFC7;
+  --accent:#4F5DFF;
+  --accent-soft:#EDEEFF;
+  --done:#2F6F4F;
+  --done-soft:#E7F2EC;
+  --warn:#B8722E;
+  --warn-soft:#FBEEE2;
+  --danger:#C24545;
+  --danger-soft:#FBEAEA;
+  --radius:10px;
+  --radius-sm:6px;
+  --shadow-sm:0 1px 2px rgba(26,26,24,0.06);
+  --shadow-md:0 4px 16px rgba(26,26,24,0.08);
+  font-family:'Inter',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+.mono{font-family:'JetBrains Mono',monospace}
+button{font-family:inherit;cursor:pointer}
+input,select,textarea{font-family:inherit;font-size:14px}
+a{color:inherit}
+::selection{background:var(--accent-soft)}
+
+/* ---------- App shell ---------- */
+.app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
+@media (max-width:880px){.app{grid-template-columns:1fr}.sidebar{display:none}.sidebar.open{display:flex}}
+
+/* ---------- Sidebar ---------- */
+.sidebar{
+  background:var(--surface);border-right:1px solid var(--line);
+  display:flex;flex-direction:column;padding:20px 14px;position:sticky;top:0;height:100vh;
+}
+.brand{display:flex;align-items:center;gap:8px;padding:4px 8px 22px;font-weight:700;font-size:15px;letter-spacing:-0.2px}
+.brand .dot{width:9px;height:9px;border-radius:3px;background:var(--accent);flex-shrink:0}
+.nav{display:flex;flex-direction:column;gap:2px}
+.nav-item{
+  display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:var(--radius-sm);
+  border:none;background:transparent;color:var(--ink-60);font-size:13.5px;font-weight:500;text-align:left;width:100%;
+  transition:background .12s,color .12s;
+}
+.nav-item svg{width:16px;height:16px;flex-shrink:0;opacity:.85}
+.nav-item:hover{background:var(--surface-2);color:var(--ink)}
+.nav-item.active{background:var(--accent-soft);color:var(--accent)}
+.nav-spacer{flex:1}
+.sidebar-foot{padding:10px 8px;font-size:11.5px;color:var(--ink-40);border-top:1px solid var(--line);margin-top:12px;padding-top:14px}
+
+/* ---------- Topbar (mobile) ---------- */
+.topbar{display:none;align-items:center;justify-content:space-between;padding:14px 16px;background:var(--surface);border-bottom:1px solid var(--line);position:sticky;top:0;z-index:50}
+.topbar button{background:none;border:none;padding:6px}
+@media (max-width:880px){.topbar{display:flex}}
+
+/* ---------- Main ---------- */
+main{padding:28px 32px 80px;max-width:1180px;width:100%}
+@media (max-width:880px){main{padding:18px 16px 60px}}
+
+.page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:24px;gap:12px;flex-wrap:wrap}
+.page-head h1{font-size:21px;font-weight:700;letter-spacing:-0.4px}
+.page-head p{font-size:13px;color:var(--ink-60);margin-top:3px}
+.btn{
+  display:inline-flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius-sm);
+  border:1px solid var(--line-strong);background:var(--surface);color:var(--ink);font-size:13px;font-weight:500;
+  transition:all .12s;
+}
+.btn:hover{border-color:var(--ink-40);background:var(--surface-2)}
+.btn-primary{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn-primary:hover{background:#000;border-color:#000}
+.btn-sm{padding:5px 10px;font-size:12.5px}
+.btn svg{width:14px;height:14px}
+
+/* ---------- Stat cards ---------- */
+.stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:28px}
+@media (max-width:780px){.stat-grid{grid-template-columns:repeat(2,1fr)}}
+.stat-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
+.stat-card .label{font-size:11.5px;color:var(--ink-60);text-transform:uppercase;letter-spacing:0.4px;font-weight:600;margin-bottom:8px}
+.stat-card .value{font-size:26px;font-weight:700;letter-spacing:-0.5px}
+.stat-card .sub{font-size:12px;color:var(--ink-40);margin-top:4px}
+
+/* ---------- Section ---------- */
+.section{margin-bottom:32px}
+.section-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.section-head h2{font-size:15px;font-weight:600}
+.section-head .count{font-size:12px;color:var(--ink-40);background:var(--surface-2);padding:2px 8px;border-radius:99px;margin-left:8px}
+
+/* ---------- Project board ---------- */
+.board{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media (max-width:980px){.board{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:10px}
+.col-head{display:flex;align-items:center;gap:8px;padding:2px 4px 4px;font-size:12.5px;font-weight:600;color:var(--ink-60);text-transform:uppercase;letter-spacing:0.3px}
+.col-head .dotstatus{width:7px;height:7px;border-radius:50%}
+.col-drop{min-height:60px;border-radius:var(--radius);transition:background .15s;display:flex;flex-direction:column;gap:10px}
+.col-drop.drag-over{background:var(--accent-soft)}
+
+/* ---------- Project card ---------- */
+.proj-card{
+  background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);
+  padding:14px 14px 12px;cursor:grab;box-shadow:var(--shadow-sm);transition:box-shadow .15s,border-color .15s;
+}
+.proj-card:active{cursor:grabbing}
+.proj-card:hover{box-shadow:var(--shadow-md);border-color:var(--line-strong)}
+.proj-card.dragging{opacity:.4}
+.proj-top{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;margin-bottom:6px}
+.proj-name{font-size:14px;font-weight:600;line-height:1.3}
+.proj-menu{background:none;border:none;color:var(--ink-40);padding:2px;flex-shrink:0}
+.proj-menu:hover{color:var(--ink)}
+.proj-deadline{display:flex;align-items:center;gap:5px;font-size:11.5px;color:var(--ink-60);margin-bottom:10px}
+.proj-deadline svg{width:12px;height:12px}
+.proj-deadline.overdue{color:var(--danger)}
+.proj-deadline.soon{color:var(--warn)}
+.proj-progress-wrap{height:5px;background:var(--surface-2);border-radius:99px;overflow:hidden;margin-bottom:8px}
+.proj-progress-bar{height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.proj-progress-bar.complete{background:var(--done)}
+.proj-meta{display:flex;align-items:center;justify-content:space-between;font-size:11.5px;color:var(--ink-40)}
+.proj-complete-btn{
+  margin-top:10px;width:100%;padding:7px;border-radius:var(--radius-sm);border:1px dashed var(--line-strong);
+  background:transparent;font-size:12px;font-weight:500;color:var(--ink-60);
+}
+.proj-complete-btn:hover{border-color:var(--done);color:var(--done);background:var(--done-soft)}
+.proj-complete-btn.is-complete{border:1px solid var(--done);background:var(--done-soft);color:var(--done)}
+
+/* ---------- Empty col ---------- */
+.empty-col{border:1.5px dashed var(--line);border-radius:var(--radius);padding:20px 12px;text-align:center;font-size:12px;color:var(--ink-40)}
+
+/* ---------- Project detail ---------- */
+.detail-back{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--ink-60);background:none;border:none;margin-bottom:14px}
+.detail-back:hover{color:var(--ink)}
+.detail-back svg{width:14px;height:14px}
+.detail-head{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:20px;margin-bottom:20px}
+.detail-head-top{display:flex;justify-content:space-between;align-items:flex-start;gap:12px;margin-bottom:14px}
+.detail-title{font-size:19px;font-weight:700;letter-spacing:-0.3px}
+.detail-progress-row{display:flex;align-items:center;gap:12px;margin-top:14px}
+.detail-progress-wrap{flex:1;height:7px;background:var(--surface-2);border-radius:99px;overflow:hidden}
+.detail-progress-bar{height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+.detail-progress-bar.complete{background:var(--done)}
+.detail-progress-pct{font-size:13px;font-weight:600;font-family:'JetBrains Mono',monospace;min-width:42px;text-align:right}
+
+.tag{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:500;padding:3px 9px;border-radius:99px}
+.tag-todo{background:var(--surface-2);color:var(--ink-60)}
+.tag-progress{background:var(--accent-soft);color:var(--accent)}
+.tag-done{background:var(--done-soft);color:var(--done)}
+
+/* ---------- Subtask list ---------- */
+.subtask-add{display:flex;gap:8px;margin-bottom:14px}
+.subtask-add input{flex:1;padding:9px 12px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);background:var(--surface)}
+.subtask-add input:focus{outline:none;border-color:var(--accent)}
+.subtask-add .date-input{width:150px;flex:none}
+.subtask-list{display:flex;flex-direction:column;gap:6px}
+.subtask-row{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;background:var(--surface);
+  border:1px solid var(--line);border-radius:var(--radius-sm);cursor:grab;
+}
+.subtask-row.dragging{opacity:.4}
+.subtask-row.done{background:var(--surface-2)}
+.subtask-check{
+  width:18px;height:18px;border-radius:5px;border:1.5px solid var(--line-strong);flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;background:var(--surface);transition:all .12s;
+}
+.subtask-check.checked{background:var(--done);border-color:var(--done)}
+.subtask-check svg{width:12px;height:12px;color:#fff;display:none}
+.subtask-check.checked svg{display:block}
+.subtask-name{flex:1;font-size:13.5px}
+.subtask-row.done .subtask-name{text-decoration:line-through;color:var(--ink-40)}
+.subtask-date{font-size:11.5px;color:var(--ink-40);font-family:'JetBrains Mono',monospace;white-space:nowrap}
+.subtask-date.overdue{color:var(--danger)}
+.subtask-del{background:none;border:none;color:var(--ink-40);padding:4px;flex-shrink:0;opacity:0;transition:opacity .12s}
+.subtask-row:hover .subtask-del{opacity:1}
+.subtask-del:hover{color:var(--danger)}
+.drag-handle{color:var(--ink-40);flex-shrink:0;display:flex}
+.drag-handle svg{width:14px;height:14px}
+
+/* ---------- Timeline / Gantt ---------- */
+.gantt-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;overflow-x:auto}
+.gantt-row{display:flex;align-items:center;gap:14px;padding:9px 0;border-bottom:1px solid var(--line)}
+.gantt-row:last-child{border-bottom:none}
+.gantt-label{width:170px;flex-shrink:0;font-size:12.5px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gantt-track{flex:1;position:relative;height:20px;background:var(--surface-2);border-radius:5px;min-width:400px}
+.gantt-bar{position:absolute;top:0;height:100%;border-radius:5px;background:var(--accent)}
+.gantt-bar.complete{background:var(--done)}
+.gantt-bar.overdue{background:var(--danger)}
+.gantt-dates{display:flex;justify-content:space-between;font-size:10.5px;color:var(--ink-40);margin-top:6px;font-family:'JetBrains Mono',monospace}
+
+/* ---------- Outcome library ---------- */
+.outcome-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.outcome-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px}
+.outcome-card .src{font-size:11px;color:var(--ink-40);text-transform:uppercase;letter-spacing:0.3px;font-weight:600;margin-bottom:6px}
+.outcome-card .txt{font-size:13.5px;line-height:1.5}
+.outcome-card .date{font-size:11px;color:var(--ink-40);margin-top:10px;font-family:'JetBrains Mono',monospace}
+.outcome-form{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:16px;margin-bottom:18px;display:flex;flex-direction:column;gap:10px}
+.outcome-form textarea{width:100%;border:1px solid var(--line-strong);border-radius:var(--radius-sm);padding:10px 12px;resize:vertical;min-height:64px}
+.outcome-form textarea:focus{outline:none;border-color:var(--accent)}
+.outcome-form-row{display:flex;gap:8px}
+.outcome-form-row select{padding:8px 10px;border:1px solid var(--line-strong);border-radius:var(--radius-sm);background:var(--surface)}
+
+/* ---------- Daily review ---------- */
+.daily-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:18px}
+.daily-card h3{font-size:13.5px;font-weight:600;margin-bottom:10px;display:flex;align-items:center;gap:6px}
+.daily-task{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13.5px}
+.daily-task:last-child{border-bottom:none}
+.daily-task .proj-tag{font-size:10.5px;color:var(--ink-40);background:var(--surface-2);padding:2px 7px;border-radius:99px;flex-shrink:0}
+.review-textarea{width:100%;border:1px solid var(--line-strong);border-radius:var(--radius-sm);padding:12px;min-height:90px;resize:vertical}
+.review-textarea:focus{outline:none;border-color:var(--accent)}
+.review-history{display:flex;flex-direction:column;gap:10px;margin-top:14px}
+.review-entry{padding:10px 12px;background:var(--surface-2);border-radius:var(--radius-sm);font-size:13px}
+.review-entry .d{font-size:11px;color:var(--ink-40);font-family:'JetBrains Mono',monospace;margin-bottom:4px}
+
+/* ---------- Stats charts (CSS bars) ---------- */
+.chart-wrap{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px}
+.bar-chart{display:flex;align-items:flex-end;gap:10px;height:140px;padding-top:10px}
+.bar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:8px;height:100%;justify-content:flex-end}
+.bar-fill{width:100%;background:var(--accent);border-radius:4px 4px 0 0;min-height:2px;transition:height .3s}
+.bar-fill.empty{background:var(--surface-2)}
+.bar-val{font-size:11px;font-weight:600;font-family:'JetBrains Mono',monospace}
+.bar-lbl{font-size:10.5px;color:var(--ink-40)}
+.stats-row{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+@media (max-width:780px){.stats-row{grid-template-columns:1fr}}
+
+/* ---------- Modal ---------- */
+.modal-overlay{position:fixed;inset:0;background:rgba(26,26,24,0.35);backdrop-filter:blur(2px);display:flex;align-items:center;justify-content:center;padding:20px;z-index:200;opacity:0;pointer-events:none;transition:opacity .15s}
+.modal-overlay.open{opacity:1;pointer-events:all}
+.modal{background:var(--surface);border-radius:var(--radius);padding:22px;max-width:420px;width:100%;box-shadow:var(--shadow-md);transform:translateY(6px);transition:transform .15s}
+.modal-overlay.open .modal{transform:translateY(0)}
+.modal h3{font-size:16px;font-weight:700;margin-bottom:14px}
+.field{margin-bottom:12px}
+.field label{display:block;font-size:12px;font-weight:600;color:var(--ink-60);margin-bottom:5px}
+.field input,.field select{width:100%;padding:9px 11px;border:1px solid var(--line-strong);border-radius:var(--radius-sm)}
+.field input:focus,.field select:focus{outline:none;border-color:var(--accent)}
+.modal-actions{display:flex;gap:8px;margin-top:18px}
+.modal-actions .btn{flex:1;justify-content:center}
+
+/* ---------- Toast ---------- */
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:10px 18px;border-radius:99px;font-size:13px;font-weight:500;opacity:0;transition:all .2s;z-index:300;pointer-events:none}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ---------- Empty states ---------- */
+.empty-state{text-align:center;padding:48px 20px;color:var(--ink-40)}
+.empty-state .ic{font-size:32px;margin-bottom:10px}
+.empty-state h4{font-size:14px;font-weight:600;color:var(--ink-60);margin-bottom:4px}
+.empty-state p{font-size:12.5px}
+
+.hidden{display:none !important}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <!-- ============ SIDEBAR ============ -->
+  <aside class="sidebar" id="sidebar">
+    <div class="brand"><span class="dot"></span> L&D Tracker</div>
+    <nav class="nav">
+      <button class="nav-item active" data-view="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        Dashboard
+      </button>
+      <button class="nav-item" data-view="projects">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7a2 2 0 012-2h4l2 2h8a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2V7z"/></svg>
+        Projects
+      </button>
+      <button class="nav-item" data-view="timeline">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="14" y2="12"/><line x1="4" y1="18" x2="17" y2="18"/></svg>
+        Timeline
+      </button>
+      <button class="nav-item" data-view="outcomes">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+        Outcome Library
+      </button>
+      <button class="nav-item" data-view="daily">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        Daily Review
+      </button>
+      <button class="nav-item" data-view="stats">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-6 4 3 5-8"/></svg>
+        Stats
+      </button>
+    </nav>
+    <div class="nav-spacer"></div>
+    <div class="sidebar-foot">Dữ liệu lưu trên trình duyệt này (localStorage)</div>
+  </aside>
+
+  <div>
+    <!-- ============ MOBILE TOPBAR ============ -->
+    <div class="topbar">
+      <button onclick="document.getElementById('sidebar').classList.toggle('open')" aria-label="Menu">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      </button>
+      <span style="font-weight:700;font-size:14px">L&D Tracker</span>
+      <span style="width:20px"></span>
+    </div>
+
+    <main id="main"></main>
+  </div>
+</div>
+
+<!-- ============ MODALS ============ -->
+<div class="modal-overlay" id="projectModal">
+  <div class="modal">
+    <h3 id="projectModalTitle">Project mới</h3>
+    <div class="field">
+      <label>Tên project</label>
+      <input type="text" id="projectNameInput" placeholder="VD: AI Learning Path">
+    </div>
+    <div class="field">
+      <label>Deadline</label>
+      <input type="date" id="projectDeadlineInput">
+    </div>
+    <div class="field">
+      <label>Trạng thái</label>
+      <select id="projectStatusInput">
+        <option value="todo">To do</option>
+        <option value="progress">In progress</option>
+        <option value="done">Done</option>
+      </select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" onclick="closeModal('projectModal')">Huỷ</button>
+      <button class="btn btn-primary" onclick="saveProject()">Lưu project</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   STATE & STORAGE
+   ============================================================ */
+const STORAGE_KEY = 'ld_tracker_v1';
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return seedData();
+}
+
+function seedData(){
+  const today = new Date();
+  const d = (off)=>{ const x=new Date(today); x.setDate(x.getDate()+off); return x.toISOString().slice(0,10); };
+  return {
+    projects: [
+      {
+        id:'p1', name:'AI Learning Path cho team', deadline:d(14), status:'progress', createdAt:d(-10),
+        subtasks:[
+          {id:'s1', name:'Khảo sát nhu cầu đào tạo', done:true, deadline:d(-5)},
+          {id:'s2', name:'Thiết kế khung chương trình', done:true, deadline:d(-2)},
+          {id:'s3', name:'Soạn nội dung module 1-3', done:false, deadline:d(3)},
+          {id:'s4', name:'Pilot với 1 nhóm nhỏ', done:false, deadline:d(10)},
+        ]
+      },
+      {
+        id:'p2', name:'Xây dựng Onboarding Kit', deadline:d(25), status:'todo', createdAt:d(-3),
+        subtasks:[
+          {id:'s5', name:'Liệt kê checklist tuần đầu', done:false, deadline:d(5)},
+          {id:'s6', name:'Quay video giới thiệu công ty', done:false, deadline:d(18)},
+        ]
+      },
+      {
+        id:'p3', name:'Đánh giá hiệu quả khoá Q2', deadline:d(-1), status:'done', createdAt:d(-30),
+        subtasks:[
+          {id:'s7', name:'Thu thập feedback học viên', done:true, deadline:d(-15)},
+          {id:'s8', name:'Tổng hợp báo cáo', done:true, deadline:d(-3)},
+        ]
+      },
+    ],
+    outcomes: [
+      {id:'o1', text:'Học viên phản hồi tích cực về phần thực hành, nên tăng tỉ lệ thực hành/lý thuyết lên 60/40 cho khoá sau.', source:'Khoá Leadership Q2', date:d(-8)},
+      {id:'o2', text:'Format video dưới 5 phút có completion rate cao hơn hẳn (92% so với 61% của video dài).', source:'Onboarding Kit', date:d(-2)},
+    ],
+    dailyReviews: {},
+    metaSeeded: true
+  };
+}
+
+let state = loadState();
+
+function saveState(){
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+}
+
+function uid(prefix){ return prefix + '_' + Math.random().toString(36).slice(2,9); }
+
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+
+function fmtDate(s){
+  if(!s) return '—';
+  const dt = new Date(s+'T00:00:00');
+  return dt.toLocaleDateString('vi-VN', {day:'2-digit', month:'2-digit', year:'numeric'});
+}
+
+function daysUntil(s){
+  if(!s) return null;
+  const dt = new Date(s+'T00:00:00');
+  const now = new Date(); now.setHours(0,0,0,0);
+  return Math.round((dt-now)/86400000);
+}
+
+/* ============================================================
+   ROUTER
+   ============================================================ */
+let currentView = 'dashboard';
+let currentProjectId = null;
+
+document.querySelectorAll('.nav-item').forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    currentView = btn.dataset.view;
+    currentProjectId = null;
+    document.getElementById('sidebar').classList.remove('open');
+    render();
+  });
+});
+
+function goToProject(id){
+  currentView = 'projectDetail';
+  currentProjectId = id;
+  render();
+}
+
+function render(){
+  const main = document.getElementById('main');
+  if(currentView === 'dashboard') main.innerHTML = renderDashboard();
+  else if(currentView === 'projects') main.innerHTML = renderProjects();
+  else if(currentView === 'projectDetail') main.innerHTML = renderProjectDetail(currentProjectId);
+  else if(currentView === 'timeline') main.innerHTML = renderTimeline();
+  else if(currentView === 'outcomes') main.innerHTML = renderOutcomes();
+  else if(currentView === 'daily') main.innerHTML = renderDaily();
+  else if(currentView === 'stats') main.innerHTML = renderStats();
+  attachDynamicHandlers();
+}
+
+/* ============================================================
+   HELPERS — derived data
+   ============================================================ */
+function projectProgress(p){
+  if(p.subtasks.length===0) return 0;
+  const done = p.subtasks.filter(s=>s.done).length;
+  return Math.round(done/p.subtasks.length*100);
+}
+
+function allSubtasks(){
+  return state.projects.flatMap(p=>p.subtasks.map(s=>({...s, projectId:p.id, projectName:p.name})));
+}
+
+function upcomingSubtasks(limit){
+  return allSubtasks()
+    .filter(s=>!s.done && s.deadline)
+    .sort((a,b)=>a.deadline.localeCompare(b.deadline))
+    .slice(0, limit||6);
+}
+
+/* ============================================================
+   DASHBOARD
+   ============================================================ */
+function renderDashboard(){
+  const total = state.projects.length;
+  const active = state.projects.filter(p=>p.status!=='done').length;
+  const done = state.projects.filter(p=>p.status==='done').length;
+  const allSubs = allSubtasks();
+  const subDone = allSubs.filter(s=>s.done).length;
+  const overdue = allSubs.filter(s=>!s.done && s.deadline && daysUntil(s.deadline)<0).length;
+
+  const upcoming = upcomingSubtasks(6);
+
+  return `
+    <div class="page-head">
+      <div><h1>Dashboard</h1><p>Tổng quan công việc L&D của bạn</p></div>
+      <button class="btn btn-primary" onclick="openProjectModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Project mới
+      </button>
+    </div>
+
+    <div class="stat-grid">
+      <div class="stat-card"><div class="label">Tổng Project</div><div class="value">${total}</div><div class="sub">${active} đang hoạt động</div></div>
+      <div class="stat-card"><div class="label">Project hoàn thành</div><div class="value">${done}</div><div class="sub">${total?Math.round(done/total*100):0}% tổng số</div></div>
+      <div class="stat-card"><div class="label">Sub-task xong</div><div class="value">${subDone}/${allSubs.length}</div><div class="sub">${allSubs.length?Math.round(subDone/allSubs.length*100):0}% hoàn thành</div></div>
+      <div class="stat-card"><div class="label">Quá hạn</div><div class="value" style="color:${overdue>0?'var(--danger)':'var(--ink)'}">${overdue}</div><div class="sub">sub-task cần chú ý</div></div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2>Sắp tới hạn <span class="count">${upcoming.length}</span></h2></div>
+      ${upcoming.length ? `
+        <div style="background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden">
+          ${upcoming.map(s=>{
+            const dleft = daysUntil(s.deadline);
+            const tag = dleft<0 ? `<span class="subtask-date overdue">Quá hạn ${Math.abs(dleft)}d</span>` : dleft===0 ? `<span class="subtask-date overdue">Hôm nay</span>` : `<span class="subtask-date">${dleft}d nữa</span>`;
+            return `<div class="daily-task" style="padding:12px 16px">
+              <span class="proj-tag">${escapeHtml(s.projectName)}</span>
+              <span style="flex:1">${escapeHtml(s.name)}</span>
+              ${tag}
+            </div>`;
+          }).join('')}
+        </div>
+      ` : `<div class="empty-state"><div class="ic">🎉</div><h4>Không có gì sắp tới hạn</h4><p>Bạn đang theo kịp tiến độ</p></div>`}
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2>Project đang chạy</h2></div>
+      <div class="board" style="grid-template-columns:repeat(${Math.min(3,Math.max(1,active))},1fr)">
+        ${state.projects.filter(p=>p.status!=='done').slice(0,3).map(p=>renderProjectCard(p)).join('') || `<div class="empty-state"><div class="ic">📋</div><h4>Chưa có project nào</h4><p>Tạo project đầu tiên của bạn</p></div>`}
+      </div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   PROJECTS (kanban board, drag & drop)
+   ============================================================ */
+const STATUS_COLS = [
+  {key:'todo', label:'To do', dot:'var(--ink-40)'},
+  {key:'progress', label:'In progress', dot:'var(--accent)'},
+  {key:'done', label:'Done', dot:'var(--done)'},
+];
+
+function renderProjects(){
+  return `
+    <div class="page-head">
+      <div><h1>Projects</h1><p>Kéo thả để đổi trạng thái project</p></div>
+      <button class="btn btn-primary" onclick="openProjectModal()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Project mới
+      </button>
+    </div>
+    <div class="board">
+      ${STATUS_COLS.map(col=>{
+        const items = state.projects.filter(p=>p.status===col.key);
+        return `
+        <div class="col">
+          <div class="col-head"><span class="dotstatus" style="background:${col.dot}"></span>${col.label} <span class="count">${items.length}</span></div>
+          <div class="col-drop" data-status="${col.key}" ondragover="handleColDragOver(event)" ondragleave="handleColDragLeave(event)" ondrop="handleColDrop(event)">
+            ${items.map(p=>renderProjectCard(p)).join('') || `<div class="empty-col">Thả project vào đây</div>`}
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+  `;
+}
+
+function renderProjectCard(p){
+  const pct = projectProgress(p);
+  const dleft = daysUntil(p.deadline);
+  let dlClass = '';
+  if(dleft!==null && p.status!=='done'){
+    if(dleft<0) dlClass='overdue'; else if(dleft<=3) dlClass='soon';
+  }
+  const dlText = dleft===null ? 'Không có deadline' : dleft<0 ? `Quá hạn ${Math.abs(dleft)} ngày` : dleft===0 ? 'Hạn hôm nay' : `Còn ${dleft} ngày`;
+
+  return `
+  <div class="proj-card" draggable="true" data-id="${p.id}" ondragstart="handleCardDragStart(event)" ondragend="handleCardDragEnd(event)" onclick="if(!event.target.closest('.proj-menu')) goToProject('${p.id}')">
+    <div class="proj-top">
+      <div class="proj-name">${escapeHtml(p.name)}</div>
+      <button class="proj-menu" onclick="event.stopPropagation();deleteProject('${p.id}')" title="Xoá project">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>
+      </button>
+    </div>
+    <div class="proj-deadline ${dlClass}">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      ${fmtDate(p.deadline)} · ${dlText}
+    </div>
+    <div class="proj-progress-wrap"><div class="proj-progress-bar ${p.status==='done'?'complete':''}" style="width:${pct}%"></div></div>
+    <div class="proj-meta">
+      <span>${p.subtasks.filter(s=>s.done).length}/${p.subtasks.length} sub-task</span>
+      <span class="mono">${pct}%</span>
+    </div>
+  </div>`;
+}
+
+let draggedCardId = null;
+
+function handleCardDragStart(e){
+  draggedCardId = e.currentTarget.dataset.id;
+  e.currentTarget.classList.add('dragging');
+  e.dataTransfer.effectAllowed = 'move';
+}
+function handleCardDragEnd(e){
+  e.currentTarget.classList.remove('dragging');
+}
+function handleColDragOver(e){
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+function handleColDragLeave(e){
+  e.currentTarget.classList.remove('drag-over');
+}
+function handleColDrop(e){
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const newStatus = e.currentTarget.dataset.status;
+  const proj = state.projects.find(p=>p.id===draggedCardId);
+  if(proj){
+    proj.status = newStatus;
+    saveState();
+    render();
+    showToast(`Project chuyển sang "${STATUS_COLS.find(c=>c.key===newStatus).label}"`);
+  }
+}
+
+function deleteProject(id){
+  if(!confirm('Xoá project này? Toàn bộ sub-task sẽ bị xoá theo.')) return;
+  state.projects = state.projects.filter(p=>p.id!==id);
+  saveState();
+  render();
+  showToast('Đã xoá project');
+}
+
+/* ---- Project modal (create) ---- */
+function openProjectModal(){
+  document.getElementById('projectModalTitle').textContent = 'Project mới';
+  document.getElementById('projectNameInput').value = '';
+  document.getElementById('projectDeadlineInput').value = '';
+  document.getElementById('projectStatusInput').value = 'todo';
+  document.getElementById('projectModal').classList.add('open');
+  setTimeout(()=>document.getElementById('projectNameInput').focus(), 50);
+}
+function closeModal(id){
+  document.getElementById(id).classList.remove('open');
+}
+function saveProject(){
+  const name = document.getElementById('projectNameInput').value.trim();
+  if(!name){ showToast('Nhập tên project trước đã'); return; }
+  const deadline = document.getElementById('projectDeadlineInput').value;
+  const status = document.getElementById('projectStatusInput').value;
+  state.projects.push({
+    id:uid('p'), name, deadline, status, createdAt: todayStr(), subtasks: []
+  });
+  saveState();
+  closeModal('projectModal');
+  render();
+  showToast('Đã tạo project mới');
+}
+
+/* ============================================================
+   PROJECT DETAIL — subtasks (drag & drop reorder, deadline)
+   ============================================================ */
+function renderProjectDetail(id){
+  const p = state.projects.find(x=>x.id===id);
+  if(!p) return `<div class="empty-state"><h4>Không tìm thấy project</h4></div>`;
+  const pct = projectProgress(p);
+  const dleft = daysUntil(p.deadline);
+
+  return `
+    <button class="detail-back" onclick="currentView='projects';render()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Quay lại Projects
+    </button>
+
+    <div class="detail-head">
+      <div class="detail-head-top">
+        <div>
+          <div class="detail-title">${escapeHtml(p.name)}</div>
+          <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+            <span class="tag tag-${p.status==='todo'?'todo':p.status==='progress'?'progress':'done'}">${p.status==='todo'?'To do':p.status==='progress'?'In progress':'Done'}</span>
+            <span style="font-size:12.5px;color:var(--ink-60)">Deadline: ${fmtDate(p.deadline)} ${dleft!==null && p.status!=='done' ? `(${dleft<0?'quá hạn '+Math.abs(dleft)+'d':dleft+'d nữa'})` : ''}</span>
+          </div>
+        </div>
+        <button class="proj-complete-btn ${p.status==='done'?'is-complete':''}" style="width:auto;margin-top:0;flex-shrink:0" onclick="toggleProjectComplete('${p.id}')">
+          ${p.status==='done' ? '✓ Đã hoàn thành' : 'Đánh dấu hoàn thành'}
+        </button>
+      </div>
+      <div class="detail-progress-row">
+        <div class="detail-progress-wrap"><div class="detail-progress-bar ${p.status==='done'?'complete':''}" style="width:${pct}%"></div></div>
+        <div class="detail-progress-pct mono">${pct}%</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2>Sub-task <span class="count">${p.subtasks.length}</span></h2></div>
+      <div class="subtask-add">
+        <input type="text" id="newSubtaskName" placeholder="Thêm sub-task mới..." onkeydown="if(event.key==='Enter')addSubtask('${p.id}')">
+        <input type="date" id="newSubtaskDate" class="date-input">
+        <button class="btn btn-primary btn-sm" onclick="addSubtask('${p.id}')">Thêm</button>
+      </div>
+      <div class="subtask-list" id="subtaskList">
+        ${p.subtasks.length ? p.subtasks.map((s,i)=>renderSubtaskRow(p.id,s,i)).join('') : `<div class="empty-state"><div class="ic">✅</div><h4>Chưa có sub-task</h4><p>Thêm việc cần làm ở trên</p></div>`}
+      </div>
+    </div>
+  `;
+}
+
+function renderSubtaskRow(projectId, s, idx){
+  const dleft = daysUntil(s.deadline);
+  const overdue = !s.done && dleft!==null && dleft<0;
+  return `
+  <div class="subtask-row ${s.done?'done':''}" draggable="true" data-idx="${idx}" data-pid="${projectId}" ondragstart="handleSubDragStart(event)" ondragover="handleSubDragOver(event)" ondrop="handleSubDrop(event)" ondragend="handleSubDragEnd(event)">
+    <span class="drag-handle"><svg viewBox="0 0 24 24" fill="currentColor"><circle cx="8" cy="6" r="1.4"/><circle cx="8" cy="12" r="1.4"/><circle cx="8" cy="18" r="1.4"/><circle cx="16" cy="6" r="1.4"/><circle cx="16" cy="12" r="1.4"/><circle cx="16" cy="18" r="1.4"/></svg></span>
+    <button class="subtask-check ${s.done?'checked':''}" onclick="toggleSubtask('${projectId}','${s.id}')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
+    </button>
+    <span class="subtask-name">${escapeHtml(s.name)}</span>
+    <span class="subtask-date ${overdue?'overdue':''}">${s.deadline ? fmtDate(s.deadline) : ''}</span>
+    <button class="subtask-del" onclick="deleteSubtask('${projectId}','${s.id}')">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
+    </button>
+  </div>`;
+}
+
+function addSubtask(projectId){
+  const nameInput = document.getElementById('newSubtaskName');
+  const dateInput = document.getElementById('newSubtaskDate');
+  const name = nameInput.value.trim();
+  if(!name) return;
+  const p = state.projects.find(x=>x.id===projectId);
+  p.subtasks.push({id:uid('s'), name, done:false, deadline:dateInput.value||''});
+  saveState();
+  nameInput.value=''; dateInput.value='';
+  render();
+}
+
+function toggleSubtask(projectId, subId){
+  const p = state.projects.find(x=>x.id===projectId);
+  const s = p.subtasks.find(x=>x.id===subId);
+  s.done = !s.done;
+  saveState();
+  render();
+}
+
+function deleteSubtask(projectId, subId){
+  const p = state.projects.find(x=>x.id===projectId);
+  p.subtasks = p.subtasks.filter(x=>x.id!==subId);
+  saveState();
+  render();
+}
+
+function toggleProjectComplete(projectId){
+  const p = state.projects.find(x=>x.id===projectId);
+  p.status = p.status==='done' ? 'progress' : 'done';
+  saveState();
+  render();
+  showToast(p.status==='done' ? 'Project đã hoàn thành 🎉' : 'Đã bỏ đánh dấu hoàn thành');
+}
+
+let draggedSubIdx = null;
+function handleSubDragStart(e){
+  draggedSubIdx = parseInt(e.currentTarget.dataset.idx);
+  e.currentTarget.classList.add('dragging');
+}
+function handleSubDragOver(e){ e.preventDefault(); }
+function handleSubDragEnd(e){ e.currentTarget.classList.remove('dragging'); }
+function handleSubDrop(e){
+  e.preventDefault();
+  const targetIdx = parseInt(e.currentTarget.dataset.idx);
+  const pid = e.currentTarget.dataset.pid;
+  const p = state.projects.find(x=>x.id===pid);
+  if(draggedSubIdx===null || draggedSubIdx===targetIdx) return;
+  const [moved] = p.subtasks.splice(draggedSubIdx,1);
+  p.subtasks.splice(targetIdx,0,moved);
+  saveState();
+  render();
+}
+
+/* ============================================================
+   TIMELINE / GANTT
+   ============================================================ */
+function renderTimeline(){
+  const projs = state.projects.filter(p=>p.deadline);
+  if(!projs.length) return `
+    <div class="page-head"><div><h1>Timeline</h1><p>Toàn bộ project theo deadline</p></div></div>
+    <div class="empty-state"><div class="ic">📅</div><h4>Chưa có project nào có deadline</h4></div>
+  `;
+
+  const allDates = [];
+  projs.forEach(p=>{ allDates.push(new Date(p.createdAt)); allDates.push(new Date(p.deadline)); });
+  const minD = new Date(Math.min(...allDates));
+  const maxD = new Date(Math.max(...allDates));
+  const totalSpan = Math.max(1, (maxD-minD)/86400000);
+
+  return `
+    <div class="page-head"><div><h1>Timeline</h1><p>Toàn bộ project theo tiến độ thời gian</p></div></div>
+    <div class="gantt-wrap">
+      ${projs.map(p=>{
+        const start = new Date(p.createdAt);
+        const end = new Date(p.deadline);
+        const left = Math.max(0,(start-minD)/86400000)/totalSpan*100;
+        const width = Math.max(2,(end-start)/86400000)/totalSpan*100;
+        const overdue = p.status!=='done' && daysUntil(p.deadline)<0;
+        return `
+        <div class="gantt-row">
+          <div class="gantt-label" title="${escapeHtml(p.name)}">${escapeHtml(p.name)}</div>
+          <div class="gantt-track">
+            <div class="gantt-bar ${p.status==='done'?'complete':overdue?'overdue':''}" style="left:${left}%;width:${width}%" title="${fmtDate(p.createdAt)} → ${fmtDate(p.deadline)}"></div>
+          </div>
+        </div>`;
+      }).join('')}
+      <div class="gantt-dates"><span>${fmtDate(minD.toISOString().slice(0,10))}</span><span>${fmtDate(maxD.toISOString().slice(0,10))}</span></div>
+    </div>
+  `;
+}
+
+/* ============================================================
+   OUTCOME LIBRARY
+   ============================================================ */
+function renderOutcomes(){
+  return `
+    <div class="page-head"><div><h1>Outcome Library</h1><p>Lưu lại bài học & kết quả từ các chương trình đào tạo</p></div></div>
+    <div class="outcome-form">
+      <textarea id="outcomeText" placeholder="Ghi lại một insight hoặc kết quả đáng nhớ..."></textarea>
+      <div class="outcome-form-row">
+        <select id="outcomeSource">
+          <option value="">Không gắn project</option>
+          ${state.projects.map(p=>`<option value="${escapeHtml(p.name)}">${escapeHtml(p.name)}</option>`).join('')}
+        </select>
+        <button class="btn btn-primary" onclick="addOutcome()">Lưu outcome</button>
+      </div>
+    </div>
+    <div class="outcome-grid">
+      ${state.outcomes.length ? [...state.outcomes].reverse().map(o=>`
+        <div class="outcome-card">
+          <div class="src">${o.source ? escapeHtml(o.source) : 'Chung'}</div>
+          <div class="txt">${escapeHtml(o.text)}</div>
+          <div class="date">${fmtDate(o.date)}</div>
+        </div>
+      `).join('') : `<div class="empty-state" style="grid-column:1/-1"><div class="ic">💡</div><h4>Chưa có outcome nào</h4><p>Ghi lại bài học đầu tiên ở trên</p></div>`}
+    </div>
+  `;
+}
+
+function addOutcome(){
+  const text = document.getElementById('outcomeText').value.trim();
+  if(!text) return;
+  const source = document.getElementById('outcomeSource').value;
+  state.outcomes.push({id:uid('o'), text, source, date: todayStr()});
+  saveState();
+  render();
+  showToast('Đã lưu outcome');
+}
+
+/* ============================================================
+   DAILY REVIEW
+   ============================================================ */
+function renderDaily(){
+  const today = todayStr();
+  const dueToday = allSubtasks().filter(s=>!s.done && s.deadline===today);
+  const overdueList = allSubtasks().filter(s=>!s.done && s.deadline && s.deadline<today);
+  const existingReview = state.dailyReviews[today] || '';
+
+  const historyEntries = Object.entries(state.dailyReviews)
+    .filter(([d])=>d!==today)
+    .sort((a,b)=>b[0].localeCompare(a[0]))
+    .slice(0,7);
+
+  return `
+    <div class="page-head"><div><h1>Daily Review</h1><p>${fmtDate(today)}</p></div></div>
+
+    <div class="daily-card">
+      <h3>📌 Đến hạn hôm nay <span class="count">${dueToday.length}</span></h3>
+      ${dueToday.length ? dueToday.map(s=>`
+        <div class="daily-task">
+          <span class="proj-tag">${escapeHtml(s.projectName)}</span>
+          <span style="flex:1">${escapeHtml(s.name)}</span>
+        </div>
+      `).join('') : `<p style="font-size:13px;color:var(--ink-40)">Không có gì đến hạn hôm nay</p>`}
+    </div>
+
+    ${overdueList.length ? `
+    <div class="daily-card" style="border-color:var(--danger)">
+      <h3 style="color:var(--danger)">⚠️ Quá hạn <span class="count">${overdueList.length}</span></h3>
+      ${overdueList.map(s=>`
+        <div class="daily-task">
+          <span class="proj-tag">${escapeHtml(s.projectName)}</span>
+          <span style="flex:1">${escapeHtml(s.name)}</span>
+          <span class="subtask-date overdue">${fmtDate(s.deadline)}</span>
+        </div>
+      `).join('')}
+    </div>` : ''}
+
+    <div class="daily-card">
+      <h3>✍️ Ghi chú cuối ngày</h3>
+      <textarea class="review-textarea" id="dailyNote" placeholder="Hôm nay bạn đã làm gì, học được gì, vướng mắc gì...">${escapeHtml(existingReview)}</textarea>
+      <div style="margin-top:10px;display:flex;justify-content:flex-end">
+        <button class="btn btn-primary btn-sm" onclick="saveDailyReview()">Lưu ghi chú</button>
+      </div>
+    </div>
+
+    ${historyEntries.length ? `
+    <div class="section">
+      <div class="section-head"><h2>Ghi chú trước đó</h2></div>
+      <div class="review-history">
+        ${historyEntries.map(([d,txt])=>`
+          <div class="review-entry"><div class="d">${fmtDate(d)}</div>${escapeHtml(txt)}</div>
+        `).join('')}
+      </div>
+    </div>` : ''}
+  `;
+}
+
+function saveDailyReview(){
+  const txt = document.getElementById('dailyNote').value.trim();
+  state.dailyReviews[todayStr()] = txt;
+  saveState();
+  showToast('Đã lưu ghi chú hôm nay');
+}
+
+/* ============================================================
+   STATS (weekly & monthly)
+   ============================================================ */
+function renderStats(){
+  const weekly = computeWeeklyCompletion();
+  const monthly = computeMonthlyCompletion();
+  const allSubs = allSubtasks();
+  const byProject = state.projects.map(p=>({name:p.name, pct: projectProgress(p)}));
+
+  return `
+    <div class="page-head"><div><h1>Stats</h1><p>Tiến độ theo tuần & tháng</p></div></div>
+
+    <div class="stats-row">
+      <div class="chart-wrap">
+        <div class="section-head" style="margin-bottom:14px"><h2>Sub-task hoàn thành / 7 ngày qua</h2></div>
+        <div class="bar-chart">
+          ${weekly.map(d=>`
+            <div class="bar-col">
+              <span class="bar-val">${d.count}</span>
+              <div class="bar-fill ${d.count===0?'empty':''}" style="height:${d.count===0?4:Math.max(8,d.count*22)}px"></div>
+              <span class="bar-lbl">${d.label}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <div class="section-head" style="margin-bottom:14px"><h2>Sub-task hoàn thành / 6 tháng qua</h2></div>
+        <div class="bar-chart">
+          ${monthly.map(d=>`
+            <div class="bar-col">
+              <span class="bar-val">${d.count}</span>
+              <div class="bar-fill ${d.count===0?'empty':''}" style="height:${d.count===0?4:Math.max(8,d.count*10)}px"></div>
+              <span class="bar-lbl">${d.label}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-head"><h2>Tiến độ theo project</h2></div>
+      <div class="chart-wrap" style="padding:16px">
+        ${byProject.length ? byProject.map(p=>`
+          <div style="margin-bottom:12px">
+            <div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
+              <span>${escapeHtml(p.name)}</span><span class="mono">${p.pct}%</span>
+            </div>
+            <div class="proj-progress-wrap"><div class="proj-progress-bar ${p.pct===100?'complete':''}" style="width:${p.pct}%"></div></div>
+          </div>
+        `).join('') : `<p style="color:var(--ink-40);font-size:13px">Chưa có project</p>`}
+      </div>
+    </div>
+  `;
+}
+
+function computeWeeklyCompletion(){
+  // Note: completion date isn't separately tracked from deadline in this v1,
+  // so this approximates using subtask deadline date for subtasks marked done.
+  const subs = allSubtasks().filter(s=>s.done && s.deadline);
+  const days = [];
+  for(let i=6;i>=0;i--){
+    const d = new Date(); d.setDate(d.getDate()-i);
+    const key = d.toISOString().slice(0,10);
+    const count = subs.filter(s=>s.deadline===key).length;
+    days.push({label:d.toLocaleDateString('vi-VN',{weekday:'short'}).replace('Th ','T'), count});
+  }
+  return days;
+}
+
+function computeMonthlyCompletion(){
+  const subs = allSubtasks().filter(s=>s.done && s.deadline);
+  const months = [];
+  for(let i=5;i>=0;i--){
+    const d = new Date(); d.setMonth(d.getMonth()-i);
+    const ym = d.toISOString().slice(0,7);
+    const count = subs.filter(s=>s.deadline && s.deadline.slice(0,7)===ym).length;
+    months.push({label:'T'+(d.getMonth()+1), count});
+  }
+  return months;
+}
+
+/* ============================================================
+   UTIL
+   ============================================================ */
+function escapeHtml(str){
+  if(!str) return '';
+  return str.replace(/[&<>"']/g, m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+let toastTimer = null;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+function attachDynamicHandlers(){ /* reserved for future per-view JS hooks */ }
+
+/* ============================================================
+   INIT
+   ============================================================ */
+saveState();
+render();
+</script>
+</body>
+</html>
