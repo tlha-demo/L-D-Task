@@ -575,7 +575,6 @@ Tổng hợp báo cáo tháng sau"></textarea>
       <div class="ai-target-row">
         <select id="aiTargetProject">
           <option value="__new__">+ Tạo project mới</option>
-          ${state.projects.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('')}
         </select>
         <input type="text" id="aiNewProjectName" placeholder="Tên project mới">
       </div>
@@ -1207,7 +1206,12 @@ let aiPreviewItems = [];
 function openAiQuickModal(){
   document.getElementById('aiRawInput').value = '';
   document.getElementById('aiNewProjectName').value = '';
-  document.getElementById('aiTargetProject').value = '__new__';
+
+  const select = document.getElementById('aiTargetProject');
+  select.innerHTML = '<option value="__new__">+ Tạo project mới</option>' +
+    state.projects.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
+  select.value = '__new__';
+
   document.getElementById('aiStepInput').classList.remove('hidden');
   document.getElementById('aiStepPreview').classList.add('hidden');
   document.getElementById('aiQuickModal').classList.add('open');
@@ -1445,7 +1449,12 @@ function renderProjectDetail(id){
           <div class="detail-title">${escapeHtml(p.name)}</div>
           <div style="margin-top:8px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">
             <span class="tag tag-${p.status==='todo'?'todo':p.status==='progress'?'progress':'done'}">${p.status==='todo'?'To do':p.status==='progress'?'In progress':'Done'}</span>
-            <span style="font-size:12.5px;color:var(--ink-60)">Deadline: ${fmtDate(p.deadline)} ${dleft!==null && p.status!=='done' ? `(${dleft<0?'quá hạn '+Math.abs(dleft)+'d':dleft+'d nữa'})` : ''}</span>
+            <span style="font-size:12.5px;color:var(--ink-60);display:flex;align-items:center;gap:6px">
+              Deadline:
+              <input type="date" value="${p.deadline || ''}" onchange="updateProjectDeadline('${p.id}', this.value)"
+                style="border:1px solid var(--line-strong);border-radius:5px;padding:3px 6px;font-size:12px;background:var(--surface);font-family:inherit">
+              ${dleft!==null && p.status!=='done' ? `<span style="color:${dleft<0?'var(--danger)':dleft<=3?'var(--warn)':'var(--ink-60)'}">(${dleft<0?'quá hạn '+Math.abs(dleft)+'d':dleft+'d nữa'})</span>` : ''}
+            </span>
           </div>
         </div>
         <button class="proj-complete-btn ${p.status==='done'?'is-complete':''}" style="width:auto;margin-top:0;flex-shrink:0" onclick="toggleProjectComplete('${p.id}')">
@@ -1481,8 +1490,14 @@ function renderSubtaskRow(projectId, s, idx){
     <button class="subtask-check ${s.done?'checked':''}" onclick="toggleSubtask('${projectId}','${s.id}')">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg>
     </button>
-    <span class="subtask-name">${escapeHtml(s.name)}</span>
-    <span class="subtask-date ${overdue?'overdue':''}">${s.deadline ? fmtDate(s.deadline) : ''}</span>
+    <input type="text" class="subtask-name-input" value="${escapeHtml(s.name)}"
+      style="flex:1;border:1px solid transparent;background:transparent;font-size:13.5px;padding:3px 6px;border-radius:5px;font-family:inherit;${s.done?'text-decoration:line-through;color:var(--ink-40)':''}"
+      onchange="updateSubtaskName('${projectId}','${s.id}', this.value)"
+      onfocus="this.style.borderColor='var(--line-strong)';this.style.background='var(--surface)'"
+      onblur="this.style.borderColor='transparent';this.style.background='transparent'">
+    <input type="date" class="subtask-date-input" value="${s.deadline || ''}"
+      style="width:128px;flex-shrink:0;border:1px solid ${overdue?'var(--danger)':'var(--line-strong)'};border-radius:5px;padding:4px 6px;font-size:11.5px;background:var(--surface);font-family:'JetBrains Mono',monospace;color:${overdue?'var(--danger)':'var(--ink-60)'}"
+      onchange="updateSubtaskDeadline('${projectId}','${s.id}', this.value)">
     <button class="subtask-del" onclick="deleteSubtask('${projectId}','${s.id}')">
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"/></svg>
     </button>
@@ -1509,6 +1524,26 @@ function toggleSubtask(projectId, subId){
   render();
 }
 
+function updateSubtaskName(projectId, subId, newName){
+  const p = state.projects.find(x=>x.id===projectId);
+  const s = p.subtasks.find(x=>x.id===subId);
+  if(!s) return;
+  const trimmed = newName.trim();
+  if(!trimmed){ render(); return; } // ignore empty, just re-render to restore old value
+  s.name = trimmed;
+  saveState();
+  render();
+}
+
+function updateSubtaskDeadline(projectId, subId, newDate){
+  const p = state.projects.find(x=>x.id===projectId);
+  const s = p.subtasks.find(x=>x.id===subId);
+  if(!s) return;
+  s.deadline = newDate;
+  saveState();
+  render();
+}
+
 function deleteSubtask(projectId, subId){
   const p = state.projects.find(x=>x.id===projectId);
   p.subtasks = p.subtasks.filter(x=>x.id!==subId);
@@ -1522,6 +1557,15 @@ function toggleProjectComplete(projectId){
   saveState();
   render();
   showToast(p.status==='done' ? 'Project đã hoàn thành 🎉' : 'Đã bỏ đánh dấu hoàn thành');
+}
+
+function updateProjectDeadline(projectId, newDate){
+  const p = state.projects.find(x=>x.id===projectId);
+  if(!p) return;
+  p.deadline = newDate;
+  saveState();
+  render();
+  showToast('Đã cập nhật deadline project');
 }
 
 let draggedSubIdx = null;
