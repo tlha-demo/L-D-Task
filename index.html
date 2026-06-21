@@ -345,6 +345,31 @@ main{padding:28px 32px 80px;max-width:1180px;width:100%}
     display:flex;position:fixed;inset:0;z-index:200;width:100%;height:100vh;
   }
 }
+
+/* ---------- Reminder popup (overdue / due-today tasks) ---------- */
+.reminder-modal{max-width:460px}
+.reminder-head{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+.reminder-icon{
+  width:34px;height:34px;border-radius:50%;background:var(--danger-soft);color:var(--danger);
+  display:flex;align-items:center;justify-content:center;flex-shrink:0;
+}
+.reminder-icon svg{width:18px;height:18px}
+.reminder-icon.ok{background:var(--done-soft);color:var(--done)}
+.reminder-list{max-height:320px;overflow-y:auto;margin:16px 0;display:flex;flex-direction:column;gap:6px}
+.reminder-item{
+  display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);
+  background:var(--surface-2);font-size:13px;
+}
+.reminder-item .dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.reminder-item .dot.overdue{background:var(--danger)}
+.reminder-item .dot.today{background:var(--warn)}
+.reminder-item .rt-name{flex:1}
+.reminder-item .rt-proj{font-size:11px;color:var(--ink-40);background:var(--surface);padding:2px 7px;border-radius:99px;flex-shrink:0}
+.reminder-item .rt-when{font-size:11px;font-family:'JetBrains Mono',monospace;flex-shrink:0}
+.reminder-item .rt-when.overdue{color:var(--danger)}
+.reminder-item .rt-when.today{color:var(--warn)}
+.reminder-dont-show{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-60);margin-top:2px;cursor:pointer}
+.reminder-dont-show input{width:14px;height:14px}
 </style>
 </head>
 <body>
@@ -493,6 +518,27 @@ main{padding:28px 32px 80px;max-width:1180px;width:100%}
     <div class="modal-actions">
       <button class="btn" onclick="closeModal('projectModal')">Huỷ</button>
       <button class="btn btn-primary" onclick="saveProject()">Lưu project</button>
+    </div>
+  </div>
+</div>
+
+<!-- ============ REMINDER MODAL (overdue / due-today tasks) ============ -->
+<div class="modal-overlay" id="reminderModal">
+  <div class="modal reminder-modal">
+    <div class="reminder-head">
+      <span class="reminder-icon" id="reminderIcon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </span>
+      <h3 id="reminderTitle">Việc cần chú ý</h3>
+    </div>
+    <p style="font-size:13px;color:var(--ink-60)" id="reminderSub"></p>
+    <div class="reminder-list" id="reminderList"></div>
+    <label class="reminder-dont-show">
+      <input type="checkbox" id="reminderDontShowToday">
+      Không nhắc lại trong hôm nay
+    </label>
+    <div class="modal-actions">
+      <button class="btn btn-primary" style="flex:1" onclick="closeReminderModal()">Đã xem</button>
     </div>
   </div>
 </div>
@@ -667,6 +713,10 @@ async function proceedIntoApp(user){
 
   await window.__loadStateFromFirestore(user.uid);
   document.getElementById('appShell').classList.remove('hidden');
+
+  if(typeof window.checkOverdueReminder === 'function'){
+    window.checkOverdueReminder();
+  }
 }
 
 /* ---------- React to auth state changes ---------- */
@@ -1420,6 +1470,70 @@ function showToast(msg){
 }
 
 function attachDynamicHandlers(){ /* reserved for future per-view JS hooks */ }
+
+/* ============================================================
+   REMINDER POPUP — overdue & due-today sub-tasks
+   ============================================================ */
+function reminderDismissKey(){
+  const uid = window.__getCurrentUid ? window.__getCurrentUid() : 'anon';
+  return 'ld_reminder_dismissed_' + uid + '_' + todayStr();
+}
+
+window.checkOverdueReminder = function(){
+  try{
+    if(localStorage.getItem(reminderDismissKey())) return;
+  }catch(e){}
+
+  const today = todayStr();
+  const subs = allSubtasks();
+  const overdue = subs.filter(s=>!s.done && s.deadline && s.deadline < today)
+    .sort((a,b)=>a.deadline.localeCompare(b.deadline));
+  const dueToday = subs.filter(s=>!s.done && s.deadline === today);
+
+  if(overdue.length === 0 && dueToday.length === 0) return;
+
+  const icon = document.getElementById('reminderIcon');
+  const title = document.getElementById('reminderTitle');
+  const sub = document.getElementById('reminderSub');
+  const list = document.getElementById('reminderList');
+
+  if(overdue.length > 0){
+    icon.classList.remove('ok');
+    title.textContent = 'Có việc đang quá hạn';
+    sub.textContent = `${overdue.length} việc quá hạn${dueToday.length ? `, ${dueToday.length} việc đến hạn hôm nay` : ''}.`;
+  }else{
+    icon.classList.add('ok');
+    title.textContent = 'Có việc đến hạn hôm nay';
+    sub.textContent = `${dueToday.length} việc cần hoàn thành hôm nay.`;
+  }
+
+  const combined = [
+    ...overdue.map(s=>({...s, kind:'overdue'})),
+    ...dueToday.map(s=>({...s, kind:'today'})),
+  ];
+
+  list.innerHTML = combined.map(s=>{
+    const dleft = daysUntil(s.deadline);
+    const whenText = s.kind==='overdue' ? `Quá hạn ${Math.abs(dleft)}d` : 'Hôm nay';
+    return `
+      <div class="reminder-item">
+        <span class="dot ${s.kind}"></span>
+        <span class="rt-proj">${escapeHtml(s.projectName)}</span>
+        <span class="rt-name">${escapeHtml(s.name)}</span>
+        <span class="rt-when ${s.kind}">${whenText}</span>
+      </div>`;
+  }).join('');
+
+  document.getElementById('reminderModal').classList.add('open');
+};
+
+window.closeReminderModal = function(){
+  const dontShow = document.getElementById('reminderDontShowToday').checked;
+  if(dontShow){
+    try{ localStorage.setItem(reminderDismissKey(), '1'); }catch(e){}
+  }
+  document.getElementById('reminderModal').classList.remove('open');
+};
 
 /* ============================================================
    INIT
