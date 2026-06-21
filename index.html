@@ -704,6 +704,9 @@ window.handleResendVerification = async function(){
   }
 };
 
+let reminderIntervalId = null;
+const REMINDER_CHECK_INTERVAL_MS = 30 * 60 * 1000; // 30 minutes
+
 async function proceedIntoApp(user){
   document.getElementById('verifyScreen').classList.add('hidden');
   document.getElementById('authScreen').classList.add('hidden');
@@ -717,6 +720,13 @@ async function proceedIntoApp(user){
   if(typeof window.checkOverdueReminder === 'function'){
     window.checkOverdueReminder();
   }
+
+  if(reminderIntervalId) clearInterval(reminderIntervalId);
+  reminderIntervalId = setInterval(()=>{
+    if(typeof window.checkOverdueReminder === 'function'){
+      window.checkOverdueReminder();
+    }
+  }, REMINDER_CHECK_INTERVAL_MS);
 }
 
 /* ---------- React to auth state changes ---------- */
@@ -738,6 +748,7 @@ onAuthStateChanged(auth, async (user)=>{
     await proceedIntoApp(user);
   }else{
     currentUser = null;
+    if(reminderIntervalId){ clearInterval(reminderIntervalId); reminderIntervalId = null; }
     document.getElementById('appShell').classList.add('hidden');
     document.getElementById('verifyScreen').classList.add('hidden');
     document.getElementById('authScreen').classList.remove('hidden');
