@@ -1479,6 +1479,17 @@ function reminderDismissKey(){
   return 'ld_reminder_dismissed_' + uid + '_' + todayStr();
 }
 
+/* Builds a signature of exactly which sub-tasks are currently overdue/due-today,
+   so dismissal only suppresses the popup for THAT specific set — if the set
+   changes (new overdue task, deleted task, etc.) the popup will show again
+   even on the same day. */
+function reminderSignature(overdue, dueToday){
+  const ids = [...overdue, ...dueToday].map(s=>s.id).sort();
+  return ids.join(',');
+}
+
+let lastReminderSignature = '';
+
 /* ---------- Native browser notification (works while this tab is open, even in background) ---------- */
 function requestNotificationPermission(){
   if(!('Notification' in window)) return;
@@ -1515,10 +1526,6 @@ function sendNativeNotification(overdueCount, dueTodayCount){
 window.checkOverdueReminder = function(){
   requestNotificationPermission();
 
-  try{
-    if(localStorage.getItem(reminderDismissKey())) return;
-  }catch(e){}
-
   const today = todayStr();
   const subs = allSubtasks();
   const overdue = subs.filter(s=>!s.done && s.deadline && s.deadline < today)
@@ -1526,6 +1533,13 @@ window.checkOverdueReminder = function(){
   const dueToday = subs.filter(s=>!s.done && s.deadline === today);
 
   if(overdue.length === 0 && dueToday.length === 0) return;
+
+  const sig = reminderSignature(overdue, dueToday);
+  lastReminderSignature = sig;
+
+  try{
+    if(localStorage.getItem(reminderDismissKey()) === sig) return;
+  }catch(e){}
 
   sendNativeNotification(overdue.length, dueToday.length);
 
@@ -1567,7 +1581,7 @@ window.checkOverdueReminder = function(){
 window.closeReminderModal = function(){
   const dontShow = document.getElementById('reminderDontShowToday').checked;
   if(dontShow){
-    try{ localStorage.setItem(reminderDismissKey(), '1'); }catch(e){}
+    try{ localStorage.setItem(reminderDismissKey(), lastReminderSignature); }catch(e){}
   }
   document.getElementById('reminderModal').classList.remove('open');
 };
