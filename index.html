@@ -47,7 +47,6 @@ a{color:inherit}
 
 /* ---------- App shell ---------- */
 .app{display:grid;grid-template-columns:220px 1fr;min-height:100vh}
-@media (max-width:880px){.app{grid-template-columns:1fr}.sidebar{display:none}.sidebar.open{display:flex}}
 
 /* ---------- Sidebar ---------- */
 .sidebar{
@@ -313,6 +312,21 @@ main{padding:28px 32px 80px;max-width:1180px;width:100%}
   width:22px;height:22px;border-color:rgba(26,26,24,0.15);border-top-color:var(--ink);display:inline-block;
 }
 
+/* ---------- Verify email screen ---------- */
+.verify-icon{
+  width:48px;height:48px;border-radius:50%;background:var(--accent-soft);color:var(--accent);
+  display:flex;align-items:center;justify-content:center;margin-bottom:18px;
+}
+.verify-icon svg{width:24px;height:24px}
+.verify-email-addr{font-weight:600;color:var(--ink)}
+.verify-actions{display:flex;flex-direction:column;gap:8px;margin-top:20px}
+.verify-link-btn{
+  background:none;border:none;font-size:12.5px;color:var(--ink-60);text-decoration:underline;
+  padding:4px;text-align:center;
+}
+.verify-link-btn:hover{color:var(--ink)}
+.verify-link-btn:disabled{opacity:.5;cursor:default;text-decoration:none}
+
 /* ---------- Sidebar user info ---------- */
 .user-info{padding:10px 8px;border-top:1px solid var(--line);margin-top:12px;padding-top:14px}
 .user-email{font-size:11.5px;color:var(--ink-60);margin-bottom:8px;word-break:break-all}
@@ -322,6 +336,15 @@ main{padding:28px 32px 80px;max-width:1180px;width:100%}
 }
 .signout-btn:hover{background:var(--surface-2);color:var(--ink)}
 .signout-btn svg{width:13px;height:13px}
+
+/* ---------- Mobile sidebar override (kept last so it always wins) ---------- */
+@media (max-width:880px){
+  .app{grid-template-columns:1fr}
+  .sidebar{display:none}
+  .sidebar.open{
+    display:flex;position:fixed;inset:0;z-index:200;width:100%;height:100vh;
+  }
+}
 </style>
 </head>
 <body>
@@ -362,6 +385,32 @@ main{padding:28px 32px 80px;max-width:1180px;width:100%}
         <span id="authSubmitText">Đăng nhập</span>
       </button>
     </form>
+  </div>
+</div>
+
+<!-- ============ VERIFY EMAIL SCREEN ============ -->
+<div class="auth-screen hidden" id="verifyScreen">
+  <div class="auth-box" style="text-align:center">
+    <div class="verify-icon" style="margin-left:auto;margin-right:auto">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22 6 12 13 2 6"/></svg>
+    </div>
+    <div class="auth-brand" style="justify-content:center">Xác nhận email của bạn</div>
+    <p class="auth-sub">
+      Mình đã gửi 1 email xác nhận tới <span class="verify-email-addr" id="verifyEmailAddr"></span>.
+      Mở email đó và bấm vào link xác nhận, rồi quay lại đây.
+    </p>
+
+    <div class="auth-error" id="verifyError"></div>
+
+    <button class="auth-submit" id="verifyCheckBtn" onclick="handleCheckVerified()">
+      <span class="auth-spinner" id="verifySpinner"></span>
+      <span id="verifyCheckText">Tôi đã xác nhận, kiểm tra lại</span>
+    </button>
+
+    <div class="verify-actions">
+      <button class="verify-link-btn" id="resendBtn" onclick="handleResendVerification()">Gửi lại email xác nhận</button>
+      <button class="verify-link-btn" onclick="handleSignOut()">Đăng xuất, dùng tài khoản khác</button>
+    </div>
   </div>
 </div>
 
@@ -457,7 +506,8 @@ main{padding:28px 32px 80px;max-width:1180px;width:100%}
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-app.js";
 import {
   getAuth, onAuthStateChanged, signInWithEmailAndPassword,
-  createUserWithEmailAndPassword, signOut
+  createUserWithEmailAndPassword, signOut,
+  sendEmailVerification, reload
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import {
   getFirestore, doc, getDoc, setDoc
@@ -539,9 +589,10 @@ window.handleAuthSubmit = async function(e){
     if(authMode === 'login'){
       await signInWithEmailAndPassword(auth, email, password);
     }else{
-      await createUserWithEmailAndPassword(auth, email, password);
+      const cred = await createUserWithEmailAndPassword(auth, email, password);
+      await sendEmailVerification(cred.user);
     }
-    // onAuthStateChanged handles the rest (loading data, showing app)
+    // onAuthStateChanged handles the rest (loading data, showing app, or showing verify screen)
   }catch(err){
     showAuthError(authErrorText(err.code));
     setAuthLoading(false);
@@ -556,22 +607,89 @@ window.handleSignOut = async function(){
   }
 };
 
+function showVerifyError(msg){
+  const el = document.getElementById('verifyError');
+  el.textContent = msg;
+  el.classList.add('show');
+}
+function hideVerifyError(){
+  document.getElementById('verifyError').classList.remove('show');
+}
+function setVerifyLoading(loading){
+  document.getElementById('verifyCheckBtn').disabled = loading;
+  document.getElementById('verifySpinner').classList.toggle('show', loading);
+}
+
+window.handleCheckVerified = async function(){
+  if(!auth.currentUser) return;
+  hideVerifyError();
+  setVerifyLoading(true);
+  try{
+    await reload(auth.currentUser);
+    if(auth.currentUser.emailVerified){
+      await proceedIntoApp(auth.currentUser);
+    }else{
+      showVerifyError('Email vẫn chưa được xác nhận. Hãy kiểm tra hộp thư (cả mục Spam) rồi thử lại.');
+      setVerifyLoading(false);
+    }
+  }catch(err){
+    showVerifyError('Có lỗi xảy ra, vui lòng thử lại.');
+    setVerifyLoading(false);
+  }
+};
+
+let resendCooldown = false;
+window.handleResendVerification = async function(){
+  if(!auth.currentUser || resendCooldown) return;
+  hideVerifyError();
+  const btn = document.getElementById('resendBtn');
+  try{
+    await sendEmailVerification(auth.currentUser);
+    btn.textContent = 'Đã gửi lại! Đợi 30s để gửi tiếp';
+    resendCooldown = true;
+    btn.disabled = true;
+    setTimeout(()=>{
+      btn.textContent = 'Gửi lại email xác nhận';
+      btn.disabled = false;
+      resendCooldown = false;
+    }, 30000);
+  }catch(err){
+    showVerifyError(authErrorText(err.code));
+  }
+};
+
+async function proceedIntoApp(user){
+  document.getElementById('verifyScreen').classList.add('hidden');
+  document.getElementById('authScreen').classList.add('hidden');
+  document.getElementById('userEmailDisplay').textContent = user.email;
+  setAuthLoading(false);
+  document.getElementById('authForm').reset();
+
+  await window.__loadStateFromFirestore(user.uid);
+  document.getElementById('appShell').classList.remove('hidden');
+}
+
 /* ---------- React to auth state changes ---------- */
 onAuthStateChanged(auth, async (user)=>{
   document.getElementById('authLoading').classList.add('hidden');
 
   if(user){
     currentUser = user;
-    document.getElementById('authScreen').classList.add('hidden');
-    document.getElementById('userEmailDisplay').textContent = user.email;
-    setAuthLoading(false);
-    document.getElementById('authForm').reset();
 
-    await window.__loadStateFromFirestore(user.uid);
-    document.getElementById('appShell').classList.remove('hidden');
+    if(!user.emailVerified){
+      document.getElementById('appShell').classList.add('hidden');
+      document.getElementById('authScreen').classList.add('hidden');
+      document.getElementById('verifyEmailAddr').textContent = user.email;
+      document.getElementById('verifyScreen').classList.remove('hidden');
+      setAuthLoading(false);
+      return;
+    }
+
+    await proceedIntoApp(user);
   }else{
     currentUser = null;
     document.getElementById('appShell').classList.add('hidden');
+    document.getElementById('verifyScreen').classList.add('hidden');
     document.getElementById('authScreen').classList.remove('hidden');
   }
 });
