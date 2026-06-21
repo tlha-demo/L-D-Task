@@ -1479,7 +1479,42 @@ function reminderDismissKey(){
   return 'ld_reminder_dismissed_' + uid + '_' + todayStr();
 }
 
+/* ---------- Native browser notification (works while this tab is open, even in background) ---------- */
+function requestNotificationPermission(){
+  if(!('Notification' in window)) return;
+  if(Notification.permission === 'default'){
+    Notification.requestPermission().catch(()=>{});
+  }
+}
+
+function sendNativeNotification(overdueCount, dueTodayCount){
+  if(!('Notification' in window)) return;
+  if(Notification.permission !== 'granted') return;
+
+  let title, body;
+  if(overdueCount > 0){
+    title = '⚠️ L&D Tracker: Có việc quá hạn';
+    body = `${overdueCount} việc đã quá hạn` + (dueTodayCount ? `, ${dueTodayCount} việc đến hạn hôm nay.` : '.');
+  }else{
+    title = '📌 L&D Tracker: Việc đến hạn hôm nay';
+    body = `${dueTodayCount} việc cần hoàn thành hôm nay.`;
+  }
+
+  try{
+    const n = new Notification(title, {
+      body,
+      tag: 'ld-tracker-reminder-' + todayStr(),
+    });
+    n.onclick = function(){
+      window.focus();
+      n.close();
+    };
+  }catch(e){ /* some browsers (e.g. iOS Safari tabs) silently disallow this */ }
+}
+
 window.checkOverdueReminder = function(){
+  requestNotificationPermission();
+
   try{
     if(localStorage.getItem(reminderDismissKey())) return;
   }catch(e){}
@@ -1491,6 +1526,8 @@ window.checkOverdueReminder = function(){
   const dueToday = subs.filter(s=>!s.done && s.deadline === today);
 
   if(overdue.length === 0 && dueToday.length === 0) return;
+
+  sendNativeNotification(overdue.length, dueToday.length);
 
   const icon = document.getElementById('reminderIcon');
   const title = document.getElementById('reminderTitle');
