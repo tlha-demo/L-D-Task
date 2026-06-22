@@ -272,6 +272,51 @@ main{padding:28px 32px 80px;max-width:1180px;width:100%}
 
 .hidden{display:none !important}
 
+/* ---------- Admin nav item ---------- */
+.nav-item.admin-nav{color:rgba(255,200,100,0.7)}
+.nav-item.admin-nav:hover{background:rgba(255,200,100,0.12);color:rgba(255,200,100,1)}
+.nav-item.admin-nav.active{background:rgba(255,200,100,0.18);color:rgba(255,200,100,1)}
+.admin-badge{font-size:9px;font-weight:700;background:rgba(255,200,100,0.25);color:rgba(255,200,100,1);padding:1px 5px;border-radius:4px;letter-spacing:0.5px;margin-left:auto}
+
+/* ---------- Admin view ---------- */
+.admin-header{background:linear-gradient(135deg,#1a2a1a 0%,#0B0F19 100%);border:1px solid rgba(255,200,100,0.2);border-radius:var(--radius);padding:20px 24px;margin-bottom:24px;display:flex;align-items:center;gap:14px}
+.admin-header-icon{width:40px;height:40px;border-radius:10px;background:rgba(255,200,100,0.15);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.admin-header-icon svg{width:20px;height:20px;color:rgba(255,200,100,1)}
+.admin-header h1{font-size:18px;font-weight:700;color:#fff;letter-spacing:-0.3px}
+.admin-header p{font-size:12.5px;color:rgba(255,255,255,0.45);margin-top:2px}
+.admin-stat-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+@media(max-width:780px){.admin-stat-grid{grid-template-columns:repeat(2,1fr)}}
+.admin-stat{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px;box-shadow:var(--shadow-sm)}
+.admin-stat .lbl{font-size:11px;color:var(--ink-60);text-transform:uppercase;letter-spacing:0.4px;font-weight:600;margin-bottom:6px}
+.admin-stat .val{font-size:24px;font-weight:700;letter-spacing:-0.5px}
+.admin-stat .sub{font-size:11.5px;color:var(--ink-40);margin-top:3px}
+.admin-user-list{display:flex;flex-direction:column;gap:12px}
+.admin-user-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow-sm)}
+.admin-user-head{display:flex;align-items:center;gap:12px;padding:14px 18px;cursor:pointer;transition:background .12s}
+.admin-user-head:hover{background:var(--surface-2)}
+.admin-user-avatar{width:34px;height:34px;border-radius:10px;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;color:var(--accent);flex-shrink:0}
+.admin-user-name{font-size:13.5px;font-weight:600;flex:1}
+.admin-user-email{font-size:11.5px;color:var(--ink-40)}
+.admin-user-meta{display:flex;gap:10px;align-items:center;margin-left:auto}
+.admin-user-tag{font-size:11px;padding:3px 9px;border-radius:99px;font-weight:500;white-space:nowrap}
+.admin-user-tag.active{background:var(--accent-soft);color:var(--accent)}
+.admin-user-tag.done-tag{background:var(--done-soft);color:var(--done)}
+.admin-chevron{width:16px;height:16px;color:var(--ink-40);transition:transform .2s;flex-shrink:0}
+.admin-user-card.expanded .admin-chevron{transform:rotate(180deg)}
+.admin-user-body{display:none;border-top:1px solid var(--line);padding:14px 18px}
+.admin-user-card.expanded .admin-user-body{display:block}
+.admin-proj-row{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--line)}
+.admin-proj-row:last-child{border-bottom:none}
+.admin-proj-status{font-size:11px;padding:2px 8px;border-radius:99px;font-weight:500;flex-shrink:0}
+.admin-proj-status.todo{background:var(--surface-2);color:var(--ink-60)}
+.admin-proj-status.progress{background:var(--accent-soft);color:var(--accent)}
+.admin-proj-status.done{background:var(--done-soft);color:var(--done)}
+.admin-proj-name{flex:1;font-size:13px;font-weight:500}
+.admin-proj-pct{font-size:11.5px;font-family:'JetBrains Mono',monospace;color:var(--ink-40);min-width:38px;text-align:right}
+.admin-loading{text-align:center;padding:48px 20px;color:var(--ink-40);font-size:13px}
+.admin-loading .spinner{width:28px;height:28px;border:2.5px solid var(--line);border-top-color:var(--accent);border-radius:50%;animation:adminspin .7s linear infinite;margin:0 auto 12px}
+@keyframes adminspin{to{transform:rotate(360deg)}}
+
 /* ---------- Auth screen ---------- */
 .auth-screen{
   min-height:100vh;display:flex;align-items:center;justify-content:center;
@@ -551,8 +596,12 @@ main{padding:28px 32px 80px;max-width:1180px;width:100%}
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 3v18h18"/><path d="M7 16l4-6 4 3 5-8"/></svg>
         Stats
       </button>
+      <button class="nav-item admin-nav hidden" data-view="admin" id="adminNavBtn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+        Admin
+        <span class="admin-badge">ADMIN</span>
+      </button>
     </nav>
-    <div class="nav-spacer"></div>
     <div class="user-info">
       <input type="text" id="displayNameInput" class="display-name-input" placeholder="Đặt tên hiển thị..."
         onchange="updateDisplayName(this.value)">
@@ -689,7 +738,7 @@ import {
   sendEmailVerification, reload
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-auth.js";
 import {
-  getFirestore, doc, getDoc, setDoc
+  getFirestore, doc, getDoc, setDoc, collection, getDocs
 } from "https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore.js";
 
 const firebaseConfig = {
@@ -847,6 +896,18 @@ async function proceedIntoApp(user){
   setAuthLoading(false);
   document.getElementById('authForm').reset();
 
+  // Check if this user is an admin
+  try{
+    const adminSnap = await getDoc(doc(db, 'admins', user.uid));
+    window.__isAdmin = adminSnap.exists();
+  }catch(e){
+    window.__isAdmin = false;
+  }
+
+  // Show/hide admin nav button
+  const adminBtn = document.getElementById('adminNavBtn');
+  if(adminBtn) adminBtn.classList.toggle('hidden', !window.__isAdmin);
+
   await window.__loadStateFromFirestore(user.uid);
   document.getElementById('appShell').classList.remove('hidden');
 
@@ -899,6 +960,15 @@ window.__firestoreSetDoc = async function(uid, data){
   return setDoc(ref, data);
 };
 window.__getCurrentUid = function(){ return currentUser ? currentUser.uid : null; };
+
+/* ---------- Admin helpers ---------- */
+window.__adminGetAllUsers = async function(){
+  // Reads all documents from the 'users' collection (requires Firestore rules to allow admin reads)
+  const snap = await getDocs(collection(db, 'users'));
+  const users = [];
+  snap.forEach(d => users.push({ uid: d.id, ...d.data() }));
+  return users;
+};
 </script>
 
 <script>
@@ -1048,6 +1118,7 @@ function render(){
   else if(currentView === 'outcomes') main.innerHTML = renderOutcomes();
   else if(currentView === 'daily') main.innerHTML = renderDaily();
   else if(currentView === 'stats') main.innerHTML = renderStats();
+  else if(currentView === 'admin'){ main.innerHTML = renderAdminShell(); loadAdminData(); }
   attachDynamicHandlers();
 
   const nameInput = document.getElementById('displayNameInput');
@@ -1929,6 +2000,114 @@ function computeMonthlyCompletion(){
   }
   return months;
 }
+
+/* ============================================================
+   ADMIN VIEW
+   ============================================================ */
+function renderAdminShell(){
+  if(!window.__isAdmin){
+    return `<div class="empty-state"><div class="ic">🔒</div><h4>Không có quyền truy cập</h4><p>Chỉ admin mới vào được trang này</p></div>`;
+  }
+  return `
+    <div class="admin-header">
+      <div class="admin-header-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+      </div>
+      <div>
+        <h1>Admin Panel</h1>
+        <p>Xem dữ liệu tất cả users (read-only)</p>
+      </div>
+    </div>
+    <div id="adminContent">
+      <div class="admin-loading">
+        <div class="spinner"></div>
+        Đang tải dữ liệu users...
+      </div>
+    </div>
+  `;
+}
+
+async function loadAdminData(){
+  if(!window.__isAdmin) return;
+  try{
+    const users = await window.__adminGetAllUsers();
+    renderAdminContent(users);
+  }catch(err){
+    console.error('Admin load error', err);
+    const el = document.getElementById('adminContent');
+    if(el) el.innerHTML = `<div class="empty-state"><div class="ic">⚠️</div><h4>Không tải được dữ liệu</h4><p style="font-size:12px;color:var(--danger)">${err.message || 'Kiểm tra Firestore Rules'}</p></div>`;
+  }
+}
+
+function renderAdminContent(users){
+  const el = document.getElementById('adminContent');
+  if(!el) return;
+
+  const totalProjects = users.reduce((s,u)=>s+(u.projects||[]).length, 0);
+  const totalSubs = users.reduce((s,u)=>s+(u.projects||[]).reduce((a,p)=>a+(p.subtasks||[]).length,0), 0);
+  const totalDone = users.reduce((s,u)=>s+(u.projects||[]).filter(p=>p.status==='done').length, 0);
+
+  el.innerHTML = `
+    <div class="admin-stat-grid">
+      <div class="admin-stat"><div class="lbl">Tổng users</div><div class="val">${users.length}</div><div class="sub">tài khoản đã tạo</div></div>
+      <div class="admin-stat"><div class="lbl">Tổng projects</div><div class="val">${totalProjects}</div><div class="sub">trên tất cả users</div></div>
+      <div class="admin-stat"><div class="lbl">Sub-tasks</div><div class="val">${totalSubs}</div><div class="sub">tổng số task</div></div>
+      <div class="admin-stat"><div class="lbl">Projects done</div><div class="val">${totalDone}</div><div class="sub">${totalProjects ? Math.round(totalDone/totalProjects*100) : 0}% hoàn thành</div></div>
+    </div>
+    <div class="section-head" style="margin-bottom:14px"><h2>Danh sách users <span class="count">${users.length}</span></h2></div>
+    <div class="admin-user-list">
+      ${users.length ? users.map(u => renderAdminUserCard(u)).join('') : `<div class="empty-state"><div class="ic">👤</div><h4>Chưa có user nào</h4></div>`}
+    </div>
+  `;
+}
+
+function renderAdminUserCard(u){
+  const projects = u.projects || [];
+  const activePjs = projects.filter(p=>p.status!=='done').length;
+  const donePjs = projects.filter(p=>p.status==='done').length;
+  const name = u.displayName || '';
+  const email = '(xem trong Firebase Console)'; // không lưu email trong Firestore data
+  const avatarChar = name ? name[0].toUpperCase() : '?';
+  const uid = u.uid;
+
+  return `
+    <div class="admin-user-card" id="auc-${uid}">
+      <div class="admin-user-head" onclick="toggleAdminUser('${uid}')">
+        <div class="admin-user-avatar">${avatarChar}</div>
+        <div style="flex:1;min-width:0">
+          <div class="admin-user-name">${escapeHtml(name || 'Chưa đặt tên')}</div>
+          <div class="admin-user-email mono">${uid}</div>
+        </div>
+        <div class="admin-user-meta">
+          ${activePjs ? `<span class="admin-user-tag active">${activePjs} đang chạy</span>` : ''}
+          ${donePjs ? `<span class="admin-user-tag done-tag">${donePjs} done</span>` : ''}
+          ${!projects.length ? `<span class="admin-user-tag" style="background:var(--surface-2);color:var(--ink-40)">0 project</span>` : ''}
+        </div>
+        <svg class="admin-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg>
+      </div>
+      <div class="admin-user-body">
+        ${projects.length ? `
+          <div style="font-size:12px;color:var(--ink-40);margin-bottom:10px">${projects.length} project · ${(u.outcomes||[]).length} outcome · ${Object.keys(u.dailyReviews||{}).length} ngày review</div>
+          ${projects.map(p=>{
+            const pct = p.subtasks && p.subtasks.length ? Math.round(p.subtasks.filter(s=>s.done).length/p.subtasks.length*100) : 0;
+            const statusLabel = p.status==='todo' ? 'To do' : p.status==='progress' ? 'In progress' : 'Done';
+            return `<div class="admin-proj-row">
+              <span class="admin-proj-status ${p.status}">${statusLabel}</span>
+              <span class="admin-proj-name">${escapeHtml(p.name)}</span>
+              <span style="font-size:11px;color:var(--ink-40)">${(p.subtasks||[]).length} task</span>
+              <span class="admin-proj-pct">${pct}%</span>
+            </div>`;
+          }).join('')}
+        ` : `<p style="font-size:13px;color:var(--ink-40)">User này chưa có project nào.</p>`}
+      </div>
+    </div>
+  `;
+}
+
+window.toggleAdminUser = function(uid){
+  const card = document.getElementById('auc-'+uid);
+  if(card) card.classList.toggle('expanded');
+};
 
 /* ============================================================
    UTIL
